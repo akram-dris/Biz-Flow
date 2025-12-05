@@ -1,122 +1,150 @@
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Button } from '../../components/common';
+import { PageHeader, Breadcrumbs } from '../../components/layout';
+import { MetricCard, RecentActivities, QuickStats } from '../../components/dashboard';
+import dashboardService, {
+    type DashboardMetrics,
+    type DashboardActivity,
+    type DashboardStats,
+} from '../../services/dashboard.service';
+import {
+    DollarSign,
+    CreditCard,
+    TrendingUp,
+    CheckSquare,
+    FileText,
+    Package,
+} from 'lucide-react';
 
 export function DashboardPage() {
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
+    const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+    const [activities, setActivities] = useState<DashboardActivity[]>([]);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [isLoadingActivities, setIsLoadingActivities] = useState(true);
+    const [isLoadingStats, setIsLoadingStats] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleLogout = async () => {
-        await logout();
-        window.location.href = '/login';
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                // Fetch all data in parallel
+                const [metricsData, activitiesData, statsData] = await Promise.all([
+                    dashboardService.getMetrics().catch((err) => {
+                        console.error('Error fetching metrics:', err);
+                        return null;
+                    }),
+                    dashboardService.getActivities().catch((err) => {
+                        console.error('Error fetching activities:', err);
+                        return [];
+                    }),
+                    dashboardService.getStats().catch((err) => {
+                        console.error('Error fetching stats:', err);
+                        return null;
+                    }),
+                ]);
+
+                setMetrics(metricsData);
+                setActivities(activitiesData);
+                setStats(statsData);
+            } catch (err) {
+                setError('Failed to load dashboard data');
+                console.error(err);
+            } finally {
+                setIsLoadingActivities(false);
+                setIsLoadingStats(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, []);
+
+    const getProfitColor = () => {
+        if (!metrics) return 'default';
+        return metrics.profitLoss >= 0 ? 'success' : 'danger';
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
-            {/* Header */}
-            <header className="flex items-center justify-between px-8 py-4 bg-slate-900/80 backdrop-blur-xl border-b border-white/10">
-                <div className="flex items-center gap-3 text-xl font-bold text-slate-50">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="w-8 h-8 text-indigo-500"
-                    >
-                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                        <path d="M2 17l10 5 10-5" />
-                        <path d="M2 12l10 5 10-5" />
-                    </svg>
-                    <span>BizFlow</span>
-                </div>
-                <div className="flex items-center gap-4">
-                    {(user?.role === 'OWNER' || user?.role === 'MANAGER') && (
-                        <Link to="/dashboard/team">
-                            <Button variant="secondary" size="sm">
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                                Team
-                            </Button>
-                        </Link>
-                    )}
-                    <span className="font-medium text-slate-200">
-                        {user?.firstName} {user?.lastName}
-                    </span>
-                    <span className="px-3 py-1 text-xs font-medium uppercase bg-indigo-500/20 text-indigo-300 rounded-full">
-                        {user?.role}
-                    </span>
-                    <Button variant="ghost" size="sm" onClick={handleLogout}>
-                        Sign Out
-                    </Button>
-                </div>
-            </header>
+        <div>
+            <Breadcrumbs />
+            <PageHeader
+                title={`Welcome back, ${user?.firstName}!`}
+                description="Here's what's happening with your business today."
+            />
 
-            {/* Main Content */}
-            <main className="max-w-6xl mx-auto px-8 py-12">
-                {/* Welcome Section */}
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-bold text-slate-50 tracking-tight mb-4">
-                        Welcome to BizFlow, {user?.firstName}! 🎉
-                    </h1>
-                    <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                        Your authentication is working correctly. This is a placeholder dashboard page.
-                        The full dashboard with metrics will be implemented in Phase 2.
-                    </p>
+            {error && (
+                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400">
+                    {error}
                 </div>
+            )}
 
-                {/* Info Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Profile Card */}
-                    <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-                        <h3 className="text-lg font-semibold text-slate-50 mb-4 flex items-center gap-2">
-                            <span>👤</span> Your Profile
-                        </h3>
-                        <ul className="space-y-3">
-                            <li className="text-slate-400 py-2 border-b border-white/5">
-                                <strong className="text-slate-200">Email:</strong> {user?.email}
-                            </li>
-                            <li className="text-slate-400 py-2 border-b border-white/5">
-                                <strong className="text-slate-200">Name:</strong> {user?.firstName} {user?.lastName}
-                            </li>
-                            <li className="text-slate-400 py-2">
-                                <strong className="text-slate-200">Role:</strong> {user?.role}
-                            </li>
-                        </ul>
-                    </div>
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <MetricCard
+                    title="Total Revenue"
+                    value={metrics?.totalRevenue ?? 0}
+                    icon={<DollarSign size={20} />}
+                    format="currency"
+                    colorScheme="success"
+                    trend={stats ? {
+                        value: stats.revenueChangePercent,
+                        isPositive: stats.revenueChangePercent >= 0,
+                    } : undefined}
+                />
+                <MetricCard
+                    title="Total Expenses"
+                    value={metrics?.totalExpenses ?? 0}
+                    icon={<CreditCard size={20} />}
+                    format="currency"
+                    colorScheme="warning"
+                    trend={stats ? {
+                        value: stats.expensesChangePercent,
+                        isPositive: stats.expensesChangePercent <= 0, // Lower expenses is positive
+                    } : undefined}
+                />
+                <MetricCard
+                    title="Profit / Loss"
+                    value={metrics?.profitLoss ?? 0}
+                    icon={<TrendingUp size={20} />}
+                    format="currency"
+                    colorScheme={getProfitColor()}
+                />
+                <MetricCard
+                    title="Open Tasks"
+                    value={metrics?.openTasksCount ?? 0}
+                    icon={<CheckSquare size={20} />}
+                    trend={stats ? {
+                        value: stats.tasksChangePercent,
+                    } : undefined}
+                />
+                <MetricCard
+                    title="Pending Invoices"
+                    value={metrics?.pendingInvoicesCount ?? 0}
+                    icon={<FileText size={20} />}
+                    colorScheme={metrics && metrics.pendingInvoicesCount > 5 ? 'warning' : 'default'}
+                    trend={stats ? {
+                        value: stats.invoicesChangePercent,
+                    } : undefined}
+                />
+                <MetricCard
+                    title="Low Stock Items"
+                    value={metrics?.lowStockCount ?? 0}
+                    icon={<Package size={20} />}
+                    colorScheme={metrics && metrics.lowStockCount > 0 ? 'danger' : 'success'}
+                />
+            </div>
 
-                    {/* Phase 1 Complete Card */}
-                    <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-                        <h3 className="text-lg font-semibold text-slate-50 mb-4 flex items-center gap-2">
-                            <span>✅</span> Phase 1 Complete
-                        </h3>
-                        <ul className="space-y-3">
-                            <li className="text-green-400 py-2 border-b border-white/5">✓ User Registration</li>
-                            <li className="text-green-400 py-2 border-b border-white/5">✓ User Login</li>
-                            <li className="text-green-400 py-2 border-b border-white/5">✓ JWT Authentication</li>
-                            <li className="text-green-400 py-2 border-b border-white/5">✓ Token Refresh</li>
-                            <li className="text-green-400 py-2 border-b border-white/5">✓ Password Reset Flow</li>
-                            <li className="text-green-400 py-2">✓ Protected Routes</li>
-                        </ul>
-                    </div>
-
-                    {/* Coming Soon Card */}
-                    <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-                        <h3 className="text-lg font-semibold text-slate-50 mb-4 flex items-center gap-2">
-                            <span>🚀</span> Coming in Phase 2
-                        </h3>
-                        <ul className="space-y-3">
-                            <li className="text-slate-400 py-2 border-b border-white/5">◯ Main Layout & Sidebar</li>
-                            <li className="text-slate-400 py-2 border-b border-white/5">◯ Dashboard Metrics</li>
-                            <li className="text-slate-400 py-2 border-b border-white/5">◯ Recent Activities</li>
-                            <li className="text-slate-400 py-2 border-b border-white/5">◯ Quick Stats</li>
-                            <li className="text-slate-400 py-2">◯ Dark/Light Theme Toggle</li>
-                        </ul>
-                    </div>
-                </div>
-            </main>
+            {/* Bottom Section: Recent Activities + Quick Stats */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <RecentActivities
+                    activities={activities}
+                    isLoading={isLoadingActivities}
+                />
+                <QuickStats
+                    stats={stats}
+                    isLoading={isLoadingStats}
+                />
+            </div>
         </div>
     );
 }
