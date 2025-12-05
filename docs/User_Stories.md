@@ -45,27 +45,38 @@
 ### Epic 1: User Onboarding & Authentication
 **Goal:** Enable secure access to the platform.
 
-#### Story 1.1: Register Business Account
+#### Story 1.1: Register Business Account (Owner)
 **As a** Business Owner  
-**I want to** register my business on BizFlow  
-**So that** I can start managing my operations
+**I want to** register my organization on BizFlow  
+**So that** I can create a workspace for my team
 
 *Acceptance Criteria:*
 - [ ] Registration form collects: Business Name, Owner Name, Email, Password
-- [ ] Email verification is sent
-- [ ] First user is automatically assigned "Owner" role
-- [ ] Upon verification, user is directed to setup wizard
+- [ ] New Organization is created with unique slug
+- [ ] User is assigned "Owner" role for that Organization
+- [ ] Redirected to Dashboard upon success
 
-#### Story 1.2: User Login
-**As a** User  
-**I want to** login with my credentials  
-**So that** I can access my business data
+#### Story 1.2: Invite Team Members
+**As a** Business Owner / Manager
+**I want to** invite employees via email
+**So that** they can join my organization
+
+*Acceptance Criteria:*
+- [ ] "Invite Member" action in Team settings
+- [ ] Enter Email and Role (Manager/Employee)
+- [ ] Invitation link sent to email (expires in 7 days)
+- [ ] View pending invitations status
+
+#### Story 1.3: User Login & Join
+**As a** User / Invited Employee
+**I want to** login or accept an invitation
+**So that** I can access the workspace
 
 *Acceptance Criteria:*
 - [ ] Login with Email and Password
-- [ ] "Remember Me" option available
-- [ ] "Forgot Password" flow with email reset link
-- [ ] Invalid credentials show clear error message
+- [ ] "Accept Invite" page validates token
+- [ ] Employee sets Name and Password to join
+- [ ] Access is scoped to the specific Organization
 
 ---
 
