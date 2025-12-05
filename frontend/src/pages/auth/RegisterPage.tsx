@@ -8,6 +8,7 @@ import { Button, Input, Alert } from '../../components/common';
 
 const registerSchema = z
     .object({
+        organizationName: z.string().min(2, 'Business name must be at least 2 characters'),
         firstName: z.string().min(1, 'First name is required'),
         lastName: z.string().min(1, 'Last name is required'),
         email: z.string().email('Please enter a valid email address'),
@@ -91,6 +92,7 @@ export function RegisterPage() {
 
         try {
             await registerUser({
+                organizationName: data.organizationName,
                 firstName: data.firstName,
                 lastName: data.lastName,
                 email: data.email,
@@ -149,6 +151,13 @@ export function RegisterPage() {
 
                     {/* Form */}
                     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                        <Input
+                            label="Business Name"
+                            placeholder="Acme Corporation"
+                            error={errors.organizationName?.message}
+                            {...register('organizationName')}
+                        />
+
                         <div className="grid grid-cols-2 gap-4">
                             <Input
                                 label="First Name"

@@ -25,7 +25,7 @@ export class AuthService {
     ) { }
 
     async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-        const { email, password, firstName, lastName } = registerDto;
+        const { email, password, firstName, lastName, organizationName } = registerDto;
 
         // Check if user already exists
         const existingUser = await this.prisma.user.findUnique({
@@ -36,17 +36,44 @@ export class AuthService {
             throw new ConflictException('Email already registered');
         }
 
+        // Generate slug from organization name
+        const slug = this.generateSlug(organizationName);
+
+        // Check if slug exists
+        const existingOrg = await this.prisma.organization.findUnique({
+            where: { slug },
+        });
+
+        if (existingOrg) {
+            throw new ConflictException('Organization name already taken. Please choose a different name.');
+        }
+
         // Hash password
         const passwordHash = await bcrypt.hash(password, 12);
 
-        // Create user
-        const user = await this.prisma.user.create({
-            data: {
-                email: email.toLowerCase(),
-                passwordHash,
-                firstName,
-                lastName,
-            },
+        // Create organization and user in a transaction
+        const { organization, user } = await this.prisma.$transaction(async (tx) => {
+            // Create organization
+            const org = await tx.organization.create({
+                data: {
+                    name: organizationName,
+                    slug,
+                },
+            });
+
+            // Create user as OWNER
+            const newUser = await tx.user.create({
+                data: {
+                    organizationId: org.id,
+                    email: email.toLowerCase(),
+                    passwordHash,
+                    firstName,
+                    lastName,
+                    role: 'OWNER',
+                },
+            });
+
+            return { organization: org, user: newUser };
         });
 
         // Generate tokens
@@ -59,6 +86,14 @@ export class AuthService {
             ...tokens,
             user: this.mapUserToResponse(user),
         };
+    }
+
+    private generateSlug(name: string): string {
+        return name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '')
+            .substring(0, 50);
     }
 
     async login(loginDto: LoginDto): Promise<AuthResponseDto> {
@@ -283,7 +318,9 @@ export class AuthService {
             isActive: user.isActive,
             isEmailVerified: user.isEmailVerified,
             avatarUrl: user.avatarUrl,
+            lastLoginAt: user.lastLoginAt,
             createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
         };
     }
 }

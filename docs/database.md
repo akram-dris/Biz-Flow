@@ -104,8 +104,23 @@ Enum expense_category {
 // AUTHENTICATION & USERS
 // ==============================================
 
+Table organizations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(200) [not null]
+  slug varchar(200) [unique, not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    slug [unique]
+  }
+
+  Note: 'Tenant organization (e.g., Company)'
+}
+
 Table users {
   id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [ref: > organizations.id, not null]
   email varchar(255) [unique, not null]
   password_hash varchar(255) [not null]
   first_name varchar(100) [not null]
@@ -120,11 +135,32 @@ Table users {
   
   indexes {
     email [unique]
+    organization_id
     role
     is_active
   }
 
-  Note: 'System users with role-based access control'
+  Note: 'System users scoped to an organization'
+}
+
+Table invitations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [ref: > organizations.id, not null]
+  email varchar(255) [not null]
+  role user_role [not null, default: 'EMPLOYEE']
+  token varchar(255) [unique, not null]
+  expires_at timestamp [not null]
+  invited_by_id uuid [ref: > users.id, not null]
+  accepted_at timestamp
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    token [unique]
+    (organization_id, email) [unique]
+    expires_at
+  }
+
+  Note: 'Email invitations for joining an organization'
 }
 
 Table refresh_tokens {
@@ -166,6 +202,7 @@ Table password_reset_tokens {
 
 Table contacts {
   id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [ref: > organizations.id, not null]
   type contact_type [not null, default: 'CUSTOMER']
   company_name varchar(200)
   first_name varchar(100) [not null]
@@ -185,6 +222,7 @@ Table contacts {
   updated_at timestamp [default: `now()`]
 
   indexes {
+    organization_id
     type
     email
     company_name
@@ -398,7 +436,8 @@ Table product_categories {
 
 Table products {
   id uuid [pk, default: `gen_random_uuid()`]
-  sku varchar(100) [unique, not null]
+  organization_id uuid [ref: > organizations.id, not null]
+  sku varchar(100) [not null]
   name varchar(200) [not null]
   description text
   category_id uuid [ref: > product_categories.id]
@@ -415,7 +454,7 @@ Table products {
   updated_at timestamp [default: `now()`]
 
   indexes {
-    sku [unique]
+    (organization_id, sku) [unique]
     name
     category_id
     is_active
@@ -454,6 +493,7 @@ Table stock_movements {
 
 Table projects {
   id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [ref: > organizations.id, not null]
   name varchar(200) [not null]
   description text
   status project_status [not null, default: 'ACTIVE']
@@ -470,6 +510,7 @@ Table projects {
   updated_at timestamp [default: `now()`]
 
   indexes {
+    organization_id
     status
     manager_id
     deadline
@@ -567,7 +608,8 @@ Table time_entries {
 
 Table departments {
   id uuid [pk, default: `gen_random_uuid()`]
-  name varchar(100) [unique, not null]
+  organization_id uuid [ref: > organizations.id, not null]
+  name varchar(100) [not null]
   description text
   manager_id uuid [ref: > users.id]
   is_active boolean [default: true]
@@ -575,7 +617,7 @@ Table departments {
   updated_at timestamp [default: `now()`]
 
   indexes {
-    name [unique]
+    (organization_id, name) [unique]
     manager_id
     is_active
   }
@@ -618,7 +660,8 @@ Table employees {
 
 Table expense_categories {
   id uuid [pk, default: `gen_random_uuid()`]
-  name varchar(100) [unique, not null]
+  organization_id uuid [ref: > organizations.id, not null]
+  name varchar(100) [not null]
   description text
   type expense_category [not null]
   is_active boolean [default: true]
@@ -626,7 +669,7 @@ Table expense_categories {
   updated_at timestamp [default: `now()`]
 
   indexes {
-    name [unique]
+    (organization_id, name) [unique]
     type
     is_active
   }
@@ -665,7 +708,8 @@ Table expenses {
 
 Table accounts {
   id uuid [pk, default: `gen_random_uuid()`]
-  code varchar(20) [unique, not null]
+  organization_id uuid [ref: > organizations.id, not null]
+  code varchar(20) [not null]
   name varchar(100) [not null]
   type varchar(50) [not null] // 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense'
   description text
@@ -676,7 +720,7 @@ Table accounts {
   updated_at timestamp [default: `now()`]
 
   indexes {
-    code [unique]
+    (organization_id, code) [unique]
     type
     parent_id
     is_active
@@ -735,7 +779,8 @@ Table notifications {
 
 Table settings {
   id uuid [pk, default: `gen_random_uuid()`]
-  key varchar(100) [unique, not null]
+  organization_id uuid [ref: > organizations.id, not null]
+  key varchar(100) [not null]
   value jsonb [not null]
   description text
   updated_by uuid [ref: > users.id]
@@ -743,7 +788,7 @@ Table settings {
   updated_at timestamp [default: `now()`]
 
   indexes {
-    key [unique]
+    (organization_id, key) [unique]
   }
 
   Note: 'Application settings and configuration'

@@ -57,6 +57,7 @@ export interface LoginResponse {
 }
 
 export interface RegisterRequest {
+    organizationName: string;
     email: string;
     password: string;
     firstName: string;

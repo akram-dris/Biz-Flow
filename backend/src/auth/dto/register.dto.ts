@@ -8,6 +8,11 @@ import {
 } from 'class-validator';
 
 export class RegisterDto {
+    @ApiProperty({ example: 'Acme Corporation', description: 'Organization/Business name' })
+    @IsString()
+    @IsNotEmpty()
+    organizationName: string;
+
     @ApiProperty({ example: 'John', description: 'User first name' })
     @IsString()
     @IsNotEmpty()
