@@ -96,11 +96,66 @@ enum ExpenseCategoryType {
 }
 
 // ==============================================
+// ORGANIZATIONS (Multi-Tenant)
+// ==============================================
+
+model Organization {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @db.VarChar(200)
+  slug        String   @unique @db.VarChar(100)
+  email       String?  @db.VarChar(255)
+  phone       String?  @db.VarChar(50)
+  address     String?  @db.Text
+  logoUrl     String?  @map("logo_url") @db.VarChar(500)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations - all organization data
+  users             User[]
+  invitations       Invitation[]
+  contacts          Contact[]
+  products          Product[]
+  productCategories ProductCategory[]
+  departments       Department[]
+  expenseCategories ExpenseCategory[]
+  accounts          Account[]
+  projects          Project[]
+  settings          Setting[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("organizations")
+}
+
+model Invitation {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  email          String    @db.VarChar(255)
+  role           UserRole  @default(EMPLOYEE)
+  token          String    @unique @db.VarChar(500)
+  expiresAt      DateTime  @map("expires_at")
+  invitedById    String    @map("invited_by") @db.Uuid
+  acceptedAt     DateTime? @map("accepted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation(fields: [invitedById], references: [id])
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([token])
+  @@map("invitations")
+}
+
+// ==============================================
 // AUTHENTICATION & USERS
 // ==============================================
 
 model User {
   id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
   email           String    @unique @db.VarChar(255)
   passwordHash    String    @map("password_hash") @db.VarChar(255)
   firstName       String    @map("first_name") @db.VarChar(100)
@@ -114,6 +169,8 @@ model User {
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
 
   // Relations
+  organization        Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sentInvitations     Invitation[]
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   createdContacts     Contact[]            @relation("ContactCreatedBy")
@@ -140,6 +197,7 @@ model User {
   notifications       Notification[]
   updatedSettings     Setting[]
 
+  @@index([organizationId])
   @@index([role])
   @@index([isActive])
   @@map("users")
@@ -181,33 +239,36 @@ model PasswordResetToken {
 // ==============================================
 
 model Contact {
-  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type         ContactType @default(CUSTOMER)
-  companyName  String?     @map("company_name") @db.VarChar(200)
-  firstName    String      @map("first_name") @db.VarChar(100)
-  lastName     String      @map("last_name") @db.VarChar(100)
-  email        String?     @db.VarChar(255)
-  phone        String?     @db.VarChar(50)
-  addressLine1 String?     @map("address_line1") @db.VarChar(255)
-  addressLine2 String?     @map("address_line2") @db.VarChar(255)
-  city         String?     @db.VarChar(100)
-  state        String?     @db.VarChar(100)
-  postalCode   String?     @map("postal_code") @db.VarChar(20)
-  country      String?     @db.VarChar(100)
-  notes        String?     @db.Text
-  isActive     Boolean     @default(true) @map("is_active")
-  createdById  String?     @map("created_by") @db.Uuid
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at")
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  type           ContactType  @default(CUSTOMER)
+  companyName    String?      @map("company_name") @db.VarChar(200)
+  firstName      String       @map("first_name") @db.VarChar(100)
+  lastName       String       @map("last_name") @db.VarChar(100)
+  email          String?      @db.VarChar(255)
+  phone          String?      @db.VarChar(50)
+  addressLine1   String?      @map("address_line1") @db.VarChar(255)
+  addressLine2   String?      @map("address_line2") @db.VarChar(255)
+  city           String?      @db.VarChar(100)
+  state          String?      @db.VarChar(100)
+  postalCode     String?      @map("postal_code") @db.VarChar(20)
+  country        String?      @db.VarChar(100)
+  notes          String?      @db.Text
+  isActive       Boolean      @default(true) @map("is_active")
+  createdById    String?      @map("created_by") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  createdBy  User?      @relation("ContactCreatedBy", fields: [createdById], references: [id])
-  leads      Lead[]
-  activities Activity[]
-  quotes     Quote[]
-  invoices   Invoice[]
-  projects   Project[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("ContactCreatedBy", fields: [createdById], references: [id])
+  leads        Lead[]
+  activities   Activity[]
+  quotes       Quote[]
+  invoices     Invoice[]
+  projects     Project[]
 
+  @@index([organizationId])
   @@index([type])
   @@index([email])
   @@index([companyName])
@@ -415,19 +476,23 @@ model Payment {
 // ==============================================
 
 model ProductCategory {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String   @unique @db.VarChar(100)
-  description String?  @db.Text
-  parentId    String?  @map("parent_id") @db.Uuid
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String   @db.VarChar(100)
+  description    String?  @db.Text
+  parentId       String?  @map("parent_id") @db.Uuid
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  parent   ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children ProductCategory[] @relation("CategoryHierarchy")
-  products Product[]
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent       ProductCategory?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     ProductCategory[]  @relation("CategoryHierarchy")
+  products     Product[]
 
+  @@unique([organizationId, name])
+  @@index([organizationId])
   @@index([parentId])
   @@index([isActive])
   @@map("product_categories")
@@ -435,7 +500,8 @@ model ProductCategory {
 
 model Product {
   id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sku               String   @unique @db.VarChar(100)
+  organizationId    String   @map("organization_id") @db.Uuid
+  sku               String   @db.VarChar(100)
   name              String   @db.VarChar(200)
   description       String?  @db.Text
   categoryId        String?  @map("category_id") @db.Uuid
@@ -452,12 +518,15 @@ model Product {
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  category       ProductCategory? @relation(fields: [categoryId], references: [id])
-  createdBy      User?            @relation(fields: [createdById], references: [id])
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category       ProductCategory?  @relation(fields: [categoryId], references: [id])
+  createdBy      User?             @relation(fields: [createdById], references: [id])
   stockMovements StockMovement[]
   quoteItems     QuoteItem[]
   invoiceItems   InvoiceItem[]
 
+  @@unique([organizationId, sku])
+  @@index([organizationId])
   @@index([name])
   @@index([categoryId])
   @@index([isActive])
@@ -495,6 +564,7 @@ model StockMovement {
 
 model Project {
   id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String        @map("organization_id") @db.Uuid
   name            String        @db.VarChar(200)
   description     String?       @db.Text
   status          ProjectStatus @default(ACTIVE)
@@ -511,13 +581,15 @@ model Project {
   updatedAt       DateTime      @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  contact   Contact?        @relation(fields: [contactId], references: [id])
-  manager   User?           @relation("ProjectManager", fields: [managerId], references: [id])
-  createdBy User?           @relation("ProjectCreatedBy", fields: [createdById], references: [id])
-  members   ProjectMember[]
-  tasks     Task[]
-  expenses  Expense[]
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact?        @relation(fields: [contactId], references: [id])
+  manager      User?           @relation("ProjectManager", fields: [managerId], references: [id])
+  createdBy    User?           @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  members      ProjectMember[]
+  tasks        Task[]
+  expenses     Expense[]
 
+  @@index([organizationId])
   @@index([status])
   @@index([managerId])
   @@index([deadline])
@@ -621,18 +693,22 @@ model TimeEntry {
 // ==============================================
 
 model Department {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String   @unique @db.VarChar(100)
-  description String?  @db.Text
-  managerId   String?  @map("manager_id") @db.Uuid
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String   @db.VarChar(100)
+  description    String?  @db.Text
+  managerId      String?  @map("manager_id") @db.Uuid
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  manager   User?      @relation(fields: [managerId], references: [id])
-  employees Employee[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  manager      User?        @relation(fields: [managerId], references: [id])
+  employees    Employee[]
 
+  @@unique([organizationId, name])
+  @@index([organizationId])
   @@index([managerId])
   @@index([isActive])
   @@map("departments")
@@ -671,17 +747,21 @@ model Employee {
 // ==============================================
 
 model ExpenseCategory {
-  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String              @unique @db.VarChar(100)
-  description String?             @db.Text
-  type        ExpenseCategoryType
-  isActive    Boolean             @default(true) @map("is_active")
-  createdAt   DateTime            @default(now()) @map("created_at")
-  updatedAt   DateTime            @default(now()) @updatedAt @map("updated_at")
+  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String              @map("organization_id") @db.Uuid
+  name           String              @db.VarChar(100)
+  description    String?             @db.Text
+  type           ExpenseCategoryType
+  isActive       Boolean             @default(true) @map("is_active")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  expenses Expense[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  expenses     Expense[]
 
+  @@unique([organizationId, name])
+  @@index([organizationId])
   @@index([type])
   @@index([isActive])
   @@map("expense_categories")
@@ -720,21 +800,25 @@ model Expense {
 }
 
 model Account {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code        String   @unique @db.VarChar(20)
-  name        String   @db.VarChar(100)
-  type        String   @db.VarChar(50)
-  description String?  @db.Text
-  parentId    String?  @map("parent_id") @db.Uuid
-  balance     Decimal  @default(0) @db.Decimal(15, 2)
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  code           String   @db.VarChar(20)
+  name           String   @db.VarChar(100)
+  type           String   @db.VarChar(50)
+  description    String?  @db.Text
+  parentId       String?  @map("parent_id") @db.Uuid
+  balance        Decimal  @default(0) @db.Decimal(15, 2)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  parent   Account?  @relation("AccountHierarchy", fields: [parentId], references: [id])
-  children Account[] @relation("AccountHierarchy")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent       Account?     @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children     Account[]    @relation("AccountHierarchy")
 
+  @@unique([organizationId, code])
+  @@index([organizationId])
   @@index([type])
   @@index([parentId])
   @@index([isActive])
@@ -790,16 +874,20 @@ model Notification {
 }
 
 model Setting {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  key         String   @unique @db.VarChar(100)
-  value       Json
-  description String?  @db.Text
-  updatedById String?  @map("updated_by") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  key            String   @db.VarChar(100)
+  value          Json
+  description    String?  @db.Text
+  updatedById    String?  @map("updated_by") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  updatedBy User? @relation(fields: [updatedById], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  updatedBy    User?        @relation(fields: [updatedById], references: [id])
 
+  @@unique([organizationId, key])
+  @@index([organizationId])
   @@map("settings")
 }
