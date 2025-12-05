@@ -6,8 +6,9 @@ import {
   RegisterPage,
   ForgotPasswordPage,
   ResetPasswordPage,
+  AcceptInvitePage,
 } from './pages/auth';
-import { DashboardPage } from './pages/dashboard';
+import { DashboardPage, TeamPage } from './pages/dashboard';
 import './App.css';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
         {/* Protected Routes */}
         <Route
@@ -29,7 +31,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/dashboard/team"
+          element={
+            <ProtectedRoute>
+              <TeamPage />
+            </ProtectedRoute>
+          }
+        />
         {/* Default Redirect */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
