@@ -51,12 +51,14 @@ export class UsersController {
         type: UserListResponseDto,
     })
     async findAll(
+        @CurrentUser() currentUser: any,
         @Query('page') page?: string,
         @Query('limit') limit?: string,
         @Query('search') search?: string,
         @Query('role') role?: UserRole,
     ): Promise<UserListResponseDto> {
         return this.usersService.findAll(
+            currentUser.organizationId,
             page ? parseInt(page, 10) : 1,
             limit ? parseInt(limit, 10) : 10,
             search,

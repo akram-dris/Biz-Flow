@@ -62,8 +62,8 @@ export function TeamPage() {
                 api.get('/users'),
                 api.get('/invitations'),
             ]);
-            // Handle both array responses and object responses with data property
-            const membersData = Array.isArray(membersRes.data) ? membersRes.data : (membersRes.data?.data || []);
+            // Handle both array responses and object responses with users/data property
+            const membersData = Array.isArray(membersRes.data) ? membersRes.data : (membersRes.data?.users || membersRes.data?.data || []);
             const invitationsData = Array.isArray(invitationsRes.data) ? invitationsRes.data : (invitationsRes.data?.data || []);
             setMembers(membersData);
             setInvitations(invitationsData);
