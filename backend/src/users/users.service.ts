@@ -21,6 +21,7 @@ export class UsersService {
     constructor(private prisma: PrismaService) { }
 
     async findAll(
+        organizationId: string,
         page = 1,
         limit = 10,
         search?: string,
@@ -28,7 +29,9 @@ export class UsersService {
     ): Promise<UserListResponseDto> {
         const skip = (page - 1) * limit;
 
-        const where: any = {};
+        const where: any = {
+            organizationId, // Filter by organization to ensure multi-tenancy
+        };
 
         if (search) {
             where.OR = [
