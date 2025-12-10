@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { PageHeader, Breadcrumbs } from '../../components/layout';
-import { MetricCard, RecentActivities, QuickStats } from '../../components/dashboard';
+import {
+    MetricCard,
+    RecentActivities,
+    QuickStats,
+    RevenueChart,
+    TaskDistributionChart,
+} from '../../components/dashboard';
 import dashboardService, {
     type DashboardMetrics,
     type DashboardActivity,
@@ -132,6 +138,16 @@ export function DashboardPage() {
                     icon={<Package size={20} />}
                     colorScheme={metrics && metrics.lowStockCount > 0 ? 'danger' : 'success'}
                 />
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div className="lg:col-span-2">
+                    <RevenueChart />
+                </div>
+                <div>
+                    <TaskDistributionChart />
+                </div>
             </div>
 
             {/* Bottom Section: Recent Activities + Quick Stats */}
