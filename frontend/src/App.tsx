@@ -11,6 +11,10 @@ import {
   AcceptInvitePage,
 } from './pages/auth';
 import { DashboardPage, TeamPage } from './pages/dashboard';
+import { ContactsPage } from './pages/crm/ContactsPage';
+import { ContactDetailPage } from './pages/crm/ContactDetailPage';
+import { ContactFormPage } from './pages/crm/ContactFormPage';
+import { LeadsPage } from './pages/crm/LeadsPage';
 import './App.css';
 
 // Placeholder pages for future modules
@@ -51,9 +55,14 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="dashboard/team" element={<TeamPage />} />
 
-            {/* CRM Module (Placeholder) */}
-            <Route path="crm" element={<PlaceholderPage title="CRM" />} />
-            <Route path="crm/*" element={<PlaceholderPage title="CRM" />} />
+            {/* CRM Module */}
+            <Route path="crm">
+              <Route index element={<Navigate to="contacts" replace />} />
+              <Route path="contacts" element={<ContactsPage />} />
+              <Route path="contacts/new" element={<ContactFormPage />} />
+              <Route path="contacts/:id" element={<ContactDetailPage />} />
+              <Route path="leads" element={<LeadsPage />} />
+            </Route>
 
             {/* Inventory Module (Placeholder) */}
             <Route path="inventory" element={<PlaceholderPage title="Inventory" />} />
