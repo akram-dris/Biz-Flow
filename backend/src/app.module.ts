@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { CrmModule } from './crm/crm.module';
 import { JwtAuthGuard } from './auth/guards';
 
 @Module({
@@ -18,6 +19,7 @@ import { JwtAuthGuard } from './auth/guards';
     AuthModule,
     UsersModule,
     DashboardModule,
+    CrmModule,
   ],
   controllers: [AppController],
   providers: [
