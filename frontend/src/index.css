@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+@layer base {
+
+  /* Light theme variables */
+  :root,
+  .light {
+    --background: 250 250 250;
+    --background-secondary: 255 255 255;
+    --foreground: 15 23 42;
+    --foreground-muted: 100 116 139;
+    --primary: 99 102 241;
+    --primary-hover: 79 70 229;
+    --primary-foreground: 255 255 255;
+    --secondary: 241 245 249;
+    --secondary-hover: 226 232 240;
+    --secondary-foreground: 30 41 59;
+    --accent: 139 92 246;
+    --accent-hover: 124 58 237;
+    --destructive: 239 68 68;
+    --destructive-hover: 220 38 38;
+    --success: 34 197 94;
+    --warning: 234 179 8;
+    --muted: 100 116 139;
+    --border: 226 232 240;
+    --card: 255 255 255;
+    --card-hover: 248 250 252;
+    --sidebar: 248 250 252;
+    --sidebar-border: 226 232 240;
+  }
+
+  /* Dark theme variables */
+  .dark {
+    --background: 15 23 42;
+    --background-secondary: 30 41 59;
+    --foreground: 248 250 252;
+    --foreground-muted: 148 163 184;
+    --primary: 99 102 241;
+    --primary-hover: 129 140 248;
+    --primary-foreground: 255 255 255;
+    --secondary: 51 65 85;
+    --secondary-hover: 71 85 105;
+    --secondary-foreground: 226 232 240;
+    --accent: 139 92 246;
+    --accent-hover: 167 139 250;
+    --destructive: 239 68 68;
+    --destructive-hover: 248 113 113;
+    --success: 34 197 94;
+    --warning: 234 179 8;
+    --muted: 100 116 139;
+    --border: 51 65 85;
+    --card: 30 41 59;
+    --card-hover: 51 65 85;
+    --sidebar: 15 23 42;
+    --sidebar-border: 51 65 85;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+    min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .dark body {
+    background: linear-gradient(135deg, rgb(15, 23, 42) 0%, rgb(30, 27, 75) 50%, rgb(15, 23, 42) 100%);
+  }
+
+  code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+      monospace;
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100vh;
+  }
+}
+
+/* Utility classes for theme */
+@layer utilities {
+  .bg-background {
+    background-color: rgb(var(--background));
+  }
+
+  .bg-background-secondary {
+    background-color: rgb(var(--background-secondary));
+  }
+
+  .bg-card {
+    background-color: rgb(var(--card));
+  }
+
+  .bg-sidebar {
+    background-color: rgb(var(--sidebar));
+  }
+
+  .text-foreground {
+    color: rgb(var(--foreground));
+  }
+
+  .text-foreground-muted {
+    color: rgb(var(--foreground-muted));
+  }
+
+  .border-default {
+    border-color: rgb(var(--border));
+  }
+
+  .border-sidebar {
+    border-color: rgb(var(--sidebar-border));
+  }
+}
